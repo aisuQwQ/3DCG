@@ -1,3 +1,6 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
 let renderer;
 let scene;
 let camera;
@@ -10,11 +13,12 @@ let me;
 let axisX;
 let axisY;
 
+let AngleDiff=0.1;
 
 let key=new Array(26).fill(false);
 let mymouse=new class{
-	x=0;
-	y=0;
+	x=-1;
+	y=-1;
 	px=0;
 	py=0;
 	difx=0;
@@ -24,6 +28,7 @@ let mymouse=new class{
 }
 
 main();
+// createOrgModel();
 
 function createWorld(){
 	floor = createFloor();
@@ -37,7 +42,7 @@ function main(){
 	createCamera(0,0,10);
 
 	createFloor();
-	mob1=createCube();
+	let mob1=createCube();
 	mob1.position.set(2,0,-2);
 
 	core=createBall();
@@ -55,57 +60,15 @@ function main(){
 				axisX.add(camera);
 				axisX.rotation.x=-0.1;
 
-
-	orgM=createOrgModel();
-	orgM.position.x=10;
-		cubeA=createCube();
-		orgM.add(cubeA);
-		cubeA.position.x=2;
-		cubeA.castShadow=true;
-			cubeB=createCube();
-			cubeA.add(cubeB);
-			cubeB.position.set(2,2,2);
-			cubeB.castShadow=true;
-
-	dLight=createDLight(-1,1,0.5); 
+	let dLight=createDLight(-1,1,0.5); 
 	dLight.castShadow=true;
 	 
 	renderer.shadowMap.enabled = true;
+
 	run();
 }
 function run() {
 	if(flag==1){
-		orgM.rotation.y+=0.01;
-		cubeA.rotation.z+=0.01;
-	
-		if(key['x'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-		{
-			camera.rotation.x=0;
-			camera.rotation.y=0;
-			camera.rotation.z=0;
-		}
-
-		// camera.lookAt(ball.position);
-
-		y=Math.cos(-ball.rotation.x)
-		z=Math.sin(-ball.rotation.x)
-		axis=new THREE.Vector3(0,1,-1);
-		if(key['w'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-		{
-			me.rotation.y=axisY.rotation.y;
-			console.log(axisY.rotation.y);
-			console.log(me.rotation.y);
-
-			core.position.z-=0.1;
-		}
-		if(key['s'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-			core.position.z+=0.1;
-		if(key['a'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-			core.position.x-=0.1;
-		if(key['d'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-			core.position.x+=0.1;
-		
-
 
 		if(key['i'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
 		{
@@ -123,33 +86,55 @@ function run() {
 		}
 		if(key['j'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
 		{
-			console.log(axisX.rotation.x);
-			axisY.rotateY(-0.1);
+			axisY.rotation.y+=0.1;
 		}
 		if(key['l'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
 		{
-			// me.rotation.y=axisY.rotation.y;
-			console.log(axisY.rotation.y);
-			// console.log(me.rotation.y);
-			axisY.rotateY(0.1);
+			axisY.rotation.y-=0.1;
+		}
+
+
+		//set between 0~2pi
+		me.rotation.y=(me.rotation.y+2*Math.PI)%(2*Math.PI);
+		axisY.rotation.y=(axisY.rotation.y+2*Math.PI)%(2*Math.PI);
+
+		if(key['w'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			me.rotation.y=axisY.rotation.y;
+			core.position.z-=0.1*Math.cos(me.rotation.y)
+			core.position.x-=0.1*Math.sin(me.rotation.y)
+		}
+		if(key['s'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			me.rotation.y=axisY.rotation.y+Math.PI;
+			core.position.z-=0.1*Math.cos(me.rotation.y)
+			core.position.x-=0.1*Math.sin(me.rotation.y)
+		}
+		if(key['a'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			me.rotation.y=axisY.rotation.y+Math.PI/2;
+			core.position.z-=0.1*Math.cos(me.rotation.y)
+			core.position.x-=0.1*Math.sin(me.rotation.y)
+		}
+		if(key['d'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			me.rotation.y=axisY.rotation.y-Math.PI/2;
+			core.position.z-=0.1*Math.cos(me.rotation.y)
+			core.position.x-=0.1*Math.sin(me.rotation.y)
 		}
 
 
 
-
-		// ball.rotation.x=mymouse.lookx;
-		//camera.rotateX(mymouse.dify/1000);
-		// camera.rotation.x=mymouse.lookx;
-		//camera.position.applyAxisAngle(new THREE.Vector3(0, 0, 1), 0.01);
-
-		mymouse.dify=0;
-
-		// ball.rotateY(mymouse.difx/100);
-		// camera.rotateY(mymouse.difx/1000);
-
-		//camera.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), mymouse.difx);
-		//camera.rotateY+=mymouse.difx/100;
+		axisY.rotation.y+=mymouse.difx/100;
 		mymouse.difx=0;
+		axisX.rotation.x+=mymouse.dify/100;
+		mymouse.dify=0;
+		console.log(axisX.rotation.x);
+		if(axisX.rotation.x<=-Math.PI/2)
+			axisX.rotation.x=-Math.PI/2+0.001;
+		if(axisX.rotation.x>=-0.1)
+				axisX.rotation.x=-0.1;
+
 	}
 	renderer.render(scene, camera);
 	requestAnimationFrame(run);
@@ -166,6 +151,12 @@ document.onkeyup=function(e){
 }
 
 document.onmousemove=function(e){
+	if(mymouse.x==-1)
+	{
+		mymouse.x=e.clientX;
+		mymouse.y=e.clientY;
+	}		
+
 	mymouse.px=mymouse.x;
 	mymouse.py=mymouse.y;
 	mymouse.x=e.clientX;
@@ -180,51 +171,11 @@ document.onmousemove=function(e){
 	if(mymouse.lookx<=-1)
 		mymouse.lookx=-1;
 	mymouse.looky+=mymouse.dify;
-
-
-	mx=e.clientX;
-	my=e.clientY;
-	
-	r=mymouse.px-mymouse.x;
-	g=mymouse.y/600;
-
-	orgM.material.color=new THREE.Color(r,g,0);
 };
-document.onclick=function(e){
-	mx=e.clientX/800*6-3;
-	my=e.clientY/600*6-3;
-
-	orgM.position.x=mx;
-	orgM.position.z=my;
-}
-function createOrgModel(){
-	material=new THREE.MeshPhongMaterial();
-
-	geome=new THREE.Geometry();
-
-	//’¸“_
-	geome.vertices.push(new THREE.Vector3(0,0,0));//0
-	geome.vertices.push(new THREE.Vector3(2,0,0));//1
-	geome.vertices.push(new THREE.Vector3(0,2,0));//2
-	geome.vertices.push(new THREE.Vector3(0,0,2));//3
-
-	geome.faces.push(new THREE.Face3(2,1,0));
-	geome.faces.push(new THREE.Face3(3,2,0));
-	geome.faces.push(new THREE.Face3(1,3,0));
-	geome.faces.push(new THREE.Face3(2,3,1));
-
-	geome.computeFaceNormals();
-	geome.computeVertexNormals();
-
-	org=new THREE.Mesh(geome, material);
-	org.castShadow=true;
-	scene.add(org);
-	return org;
-}
 
 
 function createDLight(x,y,z){
-	light = new THREE.DirectionalLight();  
+	let light = new THREE.DirectionalLight();  
 	light.intensity=0.9;
 	light.position.set(x,y,z);   
 	
@@ -233,14 +184,14 @@ function createDLight(x,y,z){
 }
 
 function createCube(){
-	geome = new THREE.BoxGeometry(1, 1, 1);
-	material = new THREE.MeshPhongMaterial( ); 
+	let geome = new THREE.BoxGeometry(1, 1, 1);
+	let material = new THREE.MeshPhongMaterial( ); 
 
-	loader = new THREE.TextureLoader();
-	texture = loader.load('20004.jpg');
+	let loader = new THREE.TextureLoader();
+	let texture = loader.load('20004.jpg');
 	material.map = texture;
 
-	cube = new THREE.Mesh( geome, material );
+	let cube = new THREE.Mesh( geome, material );
 	scene.add( cube );
 	return cube;
 }
@@ -265,7 +216,7 @@ function createSLight(x,y,z){
 }
 
 function createPLight(x,y,z){
-	color = new THREE.Color("rgb(100,100,255)");
+	let color = new THREE.Color("rgb(100,100,255)");
 	light = new THREE.PointLight();  
 	
 	light.color.set(color);
@@ -277,9 +228,9 @@ function createPLight(x,y,z){
 }
 
 function createFloor(){
-	geome = new THREE.BoxGeometry(50, 0.01, 50);
-	material = new THREE.MeshPhongMaterial( ); 
-	plane = new THREE.Mesh( geome, material );
+	let geome = new THREE.BoxGeometry(50, 0.01, 50);
+	let material = new THREE.MeshPhongMaterial( ); 
+	let plane = new THREE.Mesh( geome, material );
 	scene.add( plane );
 	return plane;
 }
@@ -289,14 +240,14 @@ function createCamera(x,y,z){
 	camera.position.set(x,y,z);
 }
 function createBall(){
-	geome = new THREE.SphereGeometry(0.5, 30, 30);
-	material = new THREE.MeshPhongMaterial( ); 
-	ball = new THREE.Mesh( geome, material );
+	let geome = new THREE.SphereGeometry(0.5, 30, 30);
+	let material = new THREE.MeshPhongMaterial( ); 
+	let ball = new THREE.Mesh( geome, material );
 	scene.add( ball ); 
 	return ball;
 }
 function createRender(){
-	container = document.getElementById('container');
+	let container = document.getElementById('container');
 	renderer = new THREE.WebGLRenderer();             
 	renderer.setSize(window.innerWidth, window.innerHeight); 
 	container.appendChild(renderer.domElement);  

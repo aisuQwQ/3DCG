@@ -4,7 +4,13 @@ let camera;
 let orgM, cubeA, cubeB; 
 let flag=1;
 let ball;
+let core;
 let me;
+
+let axisX;
+let axisY;
+
+let AngleDiff=0.1;
 
 let key=new Array(26).fill(false);
 let mymouse=new class{
@@ -29,17 +35,27 @@ function createWorld(){
 function main(){
 	createRender();
 	scene = new THREE.Scene(); 
-	createCamera(0,1.6,10);
+	createCamera(0,0,10);
 
 	createFloor();
-	
-	me=createBall();
-		ball=createCube();
-		ball.position.x=0;
-		ball.add(me);
-		me.position.z=-3;
+	mob1=createCube();
+	mob1.position.set(2,0,-2);
 
-		ball.add(camera);
+	core=createBall();
+	// core.visible=false;
+		me=createCube();
+		core.add(me);
+		axisY=createCube();
+		axisY.visible=false;
+		core.add(axisY);
+			axisX=createCube();
+			axisX.visible=false;
+			axisY.add(axisX);
+				ball=createBall();
+				ball.position.z=3;
+				axisX.add(camera);
+				axisX.rotation.x=-0.1;
+
 
 	orgM=createOrgModel();
 	orgM.position.x=10;
@@ -62,33 +78,115 @@ function run() {
 	if(flag==1){
 		orgM.rotation.y+=0.01;
 		cubeA.rotation.z+=0.01;
-	
-		if(key['x'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+
+		//set between 0~2pi
+		me.rotation.y=(me.rotation.y+2*Math.PI)%(2*Math.PI);
+		axisY.rotation.y=(axisY.rotation.y+2*Math.PI)%(2*Math.PI);
+		console.log(axisY.rotation.y);
+		console.log(me.rotation.y);
+
+		if(key['w'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
 		{
-			camera.rotation.x=0;
-			camera.rotation.y=0;
-			camera.rotation.z=0;
+			if(Math.abs(axisY.rotation.y-me.rotation.y)>Math.PI)
+			{
+				if(me.rotation.y>axisY.rotation.y)
+					me.rotation.y+=AngleDiff;
+				else
+					me.rotation.y-=AngleDiff;
+			}
+			else
+			{
+				if(me.rotation.y>axisY.rotation.y)
+					me.rotation.y+=AngleDiff;
+				else
+					me.rotation.y-=AngleDiff;
+			}
+			// if(axisY.rotation.y-me.rotation.y<=Math.PI)
+			// {
+			// 	me.rotation.y=(me.rotation.y+AngleDiff)%(2*Math.PI);
+			// 	if(me.rotation.y>axisY.rotation.y)
+			// 		me.rotation.y=axisY.rotation.y;
+			// }
+			// else
+			// {
+			// 	me.rotation.y=(me.rotation.y-AngleDiff)%(2*Math.PI);
+			// 	if(me.rotation.y+(2*Math.PI)<axisY.rotation.y)
+			// 		me.rotation.y=axisY.rotation.y;
+			// }
+			// if(me.rotation.y<axisY.rotation.y)
+			// {
+			// 	if(me.rotation.y+AngleDiff>axisY.rotation.y)
+			// 		me.rotation.y=axisY.rotation.y;
+			// 	else
+			// 		me.rotation.y+=AngleDiff;
+			// }	
+			// me.rotation.y=me.rotation.y*2/3+axisY.rotation.y/3;
+			core.position.z-=0.1*Math.cos(me.rotation.y)
+			core.position.x-=0.1*Math.sin(me.rotation.y)
+		}
+		if(key['s'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			if(axisY.rotation.y+Math.PI-me.rotation.y<=Math.PI)
+			{
+				me.rotation.y+=AngleDiff;
+				if(me.rotation.y>axisY.rotation.y+Math.PI)
+					me.rotation.y=axisY.rotation.y+Math.PI;
+			}
+			else
+			{
+				me.rotation.y-=AngleDiff;
+				if(me.rotation.y<axisY.rotation.y+Math.PI)
+					me.rotation.y=axisY.rotation.y+Math.PI;
+			}
+			core.position.z-=0.1*Math.cos(me.rotation.y)
+			core.position.x-=0.1*Math.sin(me.rotation.y)
+		}
+		if(key['a'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			if(me.rotation.y-(axisY.rotation.y+Math.PI)%(2*Math.PI)<Math.PI)
+			{
+				if(me.rotation.y+AngleDiff>axisY.rotation.y+Math.PI)
+					me.rotation.y=axisY.rotation.y+Math.PI;
+				else
+					me.rotation.y+=AngleDiff;
+			}	
+			// me.rotation.y=axisY.rotation.y+Math.PI/2;
+			core.position.z-=0.1*Math.cos(me.rotation.y)
+			core.position.x-=0.1*Math.sin(me.rotation.y)
+		}
+		if(key['d'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			me.rotation.y=axisY.rotation.y-Math.PI/2;
+			core.position.z-=0.1*Math.cos(me.rotation.y)
+			core.position.x-=0.1*Math.sin(me.rotation.y)
 		}
 
-		camera.lookAt(me.position);
+		if(key['i'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			axisX.rotateX(-0.1);
+			console.log(axisX.rotation.x);
+			if(axisX.rotation.x<=-Math.PI/2)
+				axisX.rotation.x=-Math.PI/2+0.001;
+		}
+		if(key['k'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			axisX.rotateX(0.1);
+			console.log(axisX.rotation.x);
+			if(axisX.rotation.x>=-0.1)
+				axisX.rotation.x=-0.1;
+		}
+		if(key['j'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			axisY.rotation.y-=0.1;
+		}
+		if(key['l'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		{
+			axisY.rotation.y+=0.1;
 
-		y=Math.cos(-ball.rotation.x)
-		z=Math.sin(-ball.rotation.x)
-		axis=new THREE.Vector3(0,1,-1);
-		if(key['w'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-			ball.rotateOnAxis(axis, 0.01);
-			// ball.rotateZ(0.1);
-		//camera.position.z-=0.1;
-		if(key['s'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-			camera.position.z+=0.1;
-		if(key['a'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-			camera.position.x-=0.1;
-		if(key['d'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-			ball.rotateX(0.1);
-			// camera.position.x+=0.1;
-		
-		if(ball.rotation.y==0)
-			ball.rotation.y=0;
+			// axisY.rotateY(0.1);
+		}
+		// console.log(me.rotation.y);
+
 
 
 
@@ -244,7 +342,7 @@ function createCamera(x,y,z){
 	camera.position.set(x,y,z);
 }
 function createBall(){
-	geome = new THREE.SphereGeometry(1, 30, 30);
+	geome = new THREE.SphereGeometry(0.5, 30, 30);
 	material = new THREE.MeshPhongMaterial( ); 
 	ball = new THREE.Mesh( geome, material );
 	scene.add( ball ); 
