@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+let tLoader = new THREE.TextureLoader();
+let gLoader = new GLTFLoader();
+
 let renderer;
 let scene;
 let camera;
@@ -26,6 +29,7 @@ let mymouse=new class{
 	lookx=0;
 	looky=0;
 }
+let speed=0.1;
 
 main();
 // createOrgModel();
@@ -60,8 +64,18 @@ function main(){
 				axisX.add(camera);
 				axisX.rotation.x=-0.1;
 
+	gLoader.load('./molcar.glb', function(gltf){
+		me=gltf.scene;
+		core.add(me);
+	})
+
+
+	createSky();
+	let panel=createPlane();
+
 	let dLight=createDLight(-1,1,0.5); 
 	dLight.castShadow=true;
+	let aLight=createALight(-1,1,0.5); 
 	 
 	renderer.shadowMap.enabled = true;
 
@@ -98,29 +112,29 @@ function run() {
 		me.rotation.y=(me.rotation.y+2*Math.PI)%(2*Math.PI);
 		axisY.rotation.y=(axisY.rotation.y+2*Math.PI)%(2*Math.PI);
 
-		if(key['w'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		if(key['w'.charCodeAt(0)-97]==true)
 		{
 			me.rotation.y=axisY.rotation.y;
-			core.position.z-=0.1*Math.cos(me.rotation.y)
-			core.position.x-=0.1*Math.sin(me.rotation.y)
+			core.position.z-=speed*Math.cos(me.rotation.y)
+			core.position.x-=speed*Math.sin(me.rotation.y)
 		}
-		if(key['s'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		if(key['s'.charCodeAt(0)-97]==true)
 		{
 			me.rotation.y=axisY.rotation.y+Math.PI;
-			core.position.z-=0.1*Math.cos(me.rotation.y)
-			core.position.x-=0.1*Math.sin(me.rotation.y)
+			core.position.z-=speed*Math.cos(me.rotation.y)
+			core.position.x-=speed*Math.sin(me.rotation.y)
 		}
-		if(key['a'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		if(key['a'.charCodeAt(0)-97]==true)
 		{
 			me.rotation.y=axisY.rotation.y+Math.PI/2;
-			core.position.z-=0.1*Math.cos(me.rotation.y)
-			core.position.x-=0.1*Math.sin(me.rotation.y)
+			core.position.z-=speed*Math.cos(me.rotation.y)
+			core.position.x-=speed*Math.sin(me.rotation.y)
 		}
-		if(key['d'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
+		if(key['d'.charCodeAt(0)-97]==true)
 		{
 			me.rotation.y=axisY.rotation.y-Math.PI/2;
-			core.position.z-=0.1*Math.cos(me.rotation.y)
-			core.position.x-=0.1*Math.sin(me.rotation.y)
+			core.position.z-=speed*Math.cos(me.rotation.y)
+			core.position.x-=speed*Math.sin(me.rotation.y)
 		}
 
 
@@ -129,26 +143,36 @@ function run() {
 		mymouse.difx=0;
 		axisX.rotation.x+=mymouse.dify/100;
 		mymouse.dify=0;
-		console.log(axisX.rotation.x);
 		if(axisX.rotation.x<=-Math.PI/2)
 			axisX.rotation.x=-Math.PI/2+0.001;
 		if(axisX.rotation.x>=-0.1)
 				axisX.rotation.x=-0.1;
-
 	}
 	renderer.render(scene, camera);
 	requestAnimationFrame(run);
 }
 document.onkeydown=function(e){
-	if(!e) e=window.event;
-
-	key[e.key.charCodeAt(0)-97]=true;
+	if(e.key.length==1)//a-z
+	{
+		let tmp=e.key.toLowerCase().charCodeAt(0)-97;
+		if(0<=tmp&&tmp<=25)
+			key[tmp]=true;
+	}
+	if(e.key=='Shift')
+		speed=0.2;
 };
 document.onkeyup=function(e){
-	if(!e) e=window.event;
-	
-	key[e.key.charCodeAt(0)-97]=false;
+	if(e.key.length==1)//a-z
+	{
+		let tmp=e.key.toLowerCase().charCodeAt(0)-97;
+		if(0<=tmp&&tmp<=25)
+			key[tmp]=false;
+	}	
+	if(e.key=='Shift')
+		
+		speed=0.1;
 }
+
 
 document.onmousemove=function(e){
 	if(mymouse.x==-1)
@@ -176,6 +200,36 @@ document.onmousemove=function(e){
 
 function createDLight(x,y,z){
 	let light = new THREE.DirectionalLight();  
+	light.intensity=0.7;
+	light.position.set(x,y,z);   
+	
+	scene.add(light);
+	return light
+}
+function createALight(x,y,z){
+	let color = new THREE.Color("rgb(255,255,255)");
+	let light = new THREE.AmbientLight();  
+	light.color.set(color);
+	light.intensity=0.3;
+	light.position.set(x,y,z);  
+	scene.add(light);
+	return light
+}
+function createSLight(x,y,z){
+	color = new THREE.Color("rgb(100,255,100)");
+	light = new THREE.SpotLight();  
+	light.color.set(color);
+	light.intensity=0.9;
+	light.position.set(x,y,z);  
+	light.angle= Math.PI/4;
+	scene.add(light);
+	return light
+}
+function createPLight(x,y,z){
+	let color = new THREE.Color("rgb(100,100,255)");
+	light = new THREE.PointLight();  
+	
+	light.color.set(color);
 	light.intensity=0.9;
 	light.position.set(x,y,z);   
 	
@@ -196,42 +250,41 @@ function createCube(){
 	return cube;
 }
 
-function createALight(){
-	color = new THREE.Color("rgb(255,100,255)");
-	light = new THREE.AmbientLight();  
-	light.color.set(color);
-	light.intensity=0.9;
-	scene.add(light);
-	return light
-}
-function createSLight(x,y,z){
-	color = new THREE.Color("rgb(100,255,100)");
-	light = new THREE.SpotLight();  
-	light.color.set(color);
-	light.intensity=0.9;
-	light.position.set(x,y,z);  
-	light.angle= Math.PI/4;
-	scene.add(light);
-	return light
+function createSky(){
+	let geome=new THREE.SphereGeometry(512,32);
+	let material=new THREE.MeshPhongMaterial();
+	material.side=THREE.DoubleSide;
+	// material.color=new THREE.Color(0x00FFFF);
+	let texture=tLoader.load('3sky001.jpg');
+	material.map=texture;
+	let sky=new THREE.Mesh(geome, material);
+	scene.add(sky);
 }
 
-function createPLight(x,y,z){
-	let color = new THREE.Color("rgb(100,100,255)");
-	light = new THREE.PointLight();  
-	
-	light.color.set(color);
-	light.intensity=0.9;
-	light.position.set(x,y,z);   
-	
-	scene.add(light);
-	return light
+function createPlane(){
+	let geome=new THREE.PlaneGeometry(2,2);
+	let material=new THREE.MeshPhongMaterial();
+	let loader = new THREE.TextureLoader();
+	let texture = loader.load('suzu2.jpg');
+	material.map=texture;
+	geome.theteStart=Math.PI;
+	material.side=THREE.DoubleSide;
+	let plane=new THREE.Mesh( geome, material );
+	plane.position.set(5,1,0);
+	// plane.rotation.x=-Math.PI/2;
+	scene.add( plane );
 }
+
 
 function createFloor(){
-	let geome = new THREE.BoxGeometry(50, 0.01, 50);
+	let geome = new THREE.PlaneGeometry(190, 100);
 	let material = new THREE.MeshPhongMaterial( ); 
+	let texture=tLoader.load('grand.png');
+	material.map=texture;
 	let plane = new THREE.Mesh( geome, material );
+	plane.rotation.x=-Math.PI/2;
 	scene.add( plane );
+	plane.scale.set(0.5,0.5,0.5);
 	return plane;
 }
 function createCamera(x,y,z){

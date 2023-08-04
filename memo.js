@@ -332,6 +332,10 @@ function createPLight(x,y,z){
 function createFloor(){
 	geome = new THREE.BoxGeometry(50, 0.01, 50);
 	material = new THREE.MeshPhongMaterial( ); 
+
+	texture=loader.load('20004.jpg');
+	material.map=texture;
+
 	plane = new THREE.Mesh( geome, material );
 	scene.add( plane );
 	return plane;
