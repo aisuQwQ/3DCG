@@ -1,23 +1,25 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 let tLoader = new THREE.TextureLoader();
 let gLoader = new GLTFLoader();
 
+let container = document.getElementById('container');
+
 let renderer;
 let scene;
 let camera;
-let orgM, cubeA, cubeB; 
-let flag=1;
-let ball;
+
 let core;
 let me;
-
 let axisX;
 let axisY;
 
-let AngleDiff=0.1;
+let AngleDiff=0.05;
+let sensitivity=0.005;
+let speed=0.1;
 
+let flag=0;
 let key=new Array(26).fill(false);
 let mymouse=new class{
 	x=-1;
@@ -26,52 +28,33 @@ let mymouse=new class{
 	py=0;
 	difx=0;
 	dify=0;
-	lookx=0;
-	looky=0;
 }
-let speed=0.1;
+
 
 main();
-// createOrgModel();
 
-function createWorld(){
-	floor = createFloor();
-	floor.receiveShadow = true;
-}
-
-
-function main(){
+async function main(){
 	createRender();
 	scene = new THREE.Scene(); 
 	createCamera(0,0,10);
 
 	createFloor();
-	let mob1=createCube();
-	mob1.position.set(2,0,-2);
+	createSky();
 
-	core=createBall();
-	// core.visible=false;
-		me=createCube();
-		core.add(me);
+	core=createBall(0);
 		axisY=createCube();
 		axisY.visible=false;
 		core.add(axisY);
 			axisX=createCube();
 			axisX.visible=false;
 			axisY.add(axisX);
-				ball=createBall();
-				ball.position.z=3;
 				axisX.add(camera);
 				axisX.rotation.x=-0.1;
-
-	gLoader.load('./molcar.glb', function(gltf){
-		me=gltf.scene;
-		core.add(me);
-	})
-
-
-	createSky();
-	let panel=createPlane();
+		gLoader.load('./molcar.glb', function(gltf){
+			me=gltf.scene;
+			core.add(me);
+			flag=1;
+		})
 
 	let dLight=createDLight(-1,1,0.5); 
 	dLight.castShadow=true;
@@ -81,67 +64,71 @@ function main(){
 
 	run();
 }
+
 function run() {
-	if(flag==1){
-
-		if(key['i'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-		{
-			axisX.rotateX(-0.1);
-			console.log(axisX.rotation.x);
-			if(axisX.rotation.x<=-Math.PI/2)
-				axisX.rotation.x=-Math.PI/2+0.001;
-		}
-		if(key['k'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-		{
-			axisX.rotateX(0.1);
-			console.log(axisX.rotation.x);
-			if(axisX.rotation.x>=-0.1)
-				axisX.rotation.x=-0.1;
-		}
-		if(key['j'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-		{
-			axisY.rotation.y+=0.1;
-		}
-		if(key['l'.charCodeAt(0)-'a'.charCodeAt(0)]==true)
-		{
-			axisY.rotation.y-=0.1;
-		}
-
-
+	if(flag)
+	{
 		//set between 0~2pi
 		me.rotation.y=(me.rotation.y+2*Math.PI)%(2*Math.PI);
 		axisY.rotation.y=(axisY.rotation.y+2*Math.PI)%(2*Math.PI);
-
-		if(key['w'.charCodeAt(0)-97]==true)
+		//本体移動
+		let d=key['w'.charCodeAt(0)-97]*1+key['s'.charCodeAt(0)-97]*2+key['d'.charCodeAt(0)-97]*4+key['a'.charCodeAt(0)-97]*8;
+		if(d>0)
 		{
-			me.rotation.y=axisY.rotation.y;
+			let direction=0;
+			if(d==1||d==13) direction=0;
+			if(d==5) direction=-Math.PI/4;
+			if(d==4||d==7) direction=-Math.PI/2;
+			if(d==6) direction=-3*Math.PI/4
+			if(d==2||d==14) direction=Math.PI;
+			if(d==10) direction=3*Math.PI/4;
+			if(d==8||d==11) direction=Math.PI/2;
+			if(d==9) direction=Math.PI/4;
+
+			direction=(axisY.rotation.y+direction+2*Math.PI)%(2*Math.PI);
+
+			if((me.rotation.y<direction)^(Math.abs(me.rotation.y-direction)<Math.PI))
+			{
+				if(me.rotation.y<direction)
+				{
+					if((me.rotation.y-AngleDiff+2*Math.PI)<direction)
+						me.rotation.y=direction;
+					else
+						me.rotation.y-=AngleDiff;
+				}
+				else
+				{
+					if((me.rotation.y-AngleDiff)<direction)
+						me.rotation.y=direction;
+					else
+						me.rotation.y-=AngleDiff;
+				}
+			}
+			else
+			{
+				if(me.rotation.y>direction)
+				{
+					if((me.rotation.y+AngleDiff)>(direction+2*Math.PI))
+						me.rotation.y=direction;
+					else
+						me.rotation.y+=AngleDiff;
+				}
+				else
+				{
+					if((me.rotation.y+AngleDiff)>direction)
+						me.rotation.y=direction;
+					else
+						me.rotation.y+=AngleDiff;
+				}
+			}
 			core.position.z-=speed*Math.cos(me.rotation.y)
 			core.position.x-=speed*Math.sin(me.rotation.y)
 		}
-		if(key['s'.charCodeAt(0)-97]==true)
-		{
-			me.rotation.y=axisY.rotation.y+Math.PI;
-			core.position.z-=speed*Math.cos(me.rotation.y)
-			core.position.x-=speed*Math.sin(me.rotation.y)
-		}
-		if(key['a'.charCodeAt(0)-97]==true)
-		{
-			me.rotation.y=axisY.rotation.y+Math.PI/2;
-			core.position.z-=speed*Math.cos(me.rotation.y)
-			core.position.x-=speed*Math.sin(me.rotation.y)
-		}
-		if(key['d'.charCodeAt(0)-97]==true)
-		{
-			me.rotation.y=axisY.rotation.y-Math.PI/2;
-			core.position.z-=speed*Math.cos(me.rotation.y)
-			core.position.x-=speed*Math.sin(me.rotation.y)
-		}
 
-
-
-		axisY.rotation.y+=mymouse.difx/100;
+		//視点移動
+		axisY.rotation.y+=mymouse.difx*sensitivity;
 		mymouse.difx=0;
-		axisX.rotation.x+=mymouse.dify/100;
+		axisX.rotation.x+=mymouse.dify*sensitivity;
 		mymouse.dify=0;
 		if(axisX.rotation.x<=-Math.PI/2)
 			axisX.rotation.x=-Math.PI/2+0.001;
@@ -161,6 +148,7 @@ document.onkeydown=function(e){
 	if(e.key=='Shift')
 		speed=0.2;
 };
+
 document.onkeyup=function(e){
 	if(e.key.length==1)//a-z
 	{
@@ -169,34 +157,36 @@ document.onkeyup=function(e){
 			key[tmp]=false;
 	}	
 	if(e.key=='Shift')
-		
 		speed=0.1;
 }
 
-
 document.onmousemove=function(e){
-	if(mymouse.x==-1)
+	if(document.pointerLockElement==container)//pointer lock on
 	{
+		mymouse.difx-=e.movementX;
+		mymouse.dify-=e.movementY;
+	}
+	else//pointer lock off
+	{
+		if(mymouse.x==-1)
+		{
+			mymouse.x=e.clientX;
+			mymouse.y=e.clientY;
+		}		
+	
+		mymouse.px=mymouse.x;
+		mymouse.py=mymouse.y;
 		mymouse.x=e.clientX;
 		mymouse.y=e.clientY;
-	}		
-
-	mymouse.px=mymouse.x;
-	mymouse.py=mymouse.y;
-	mymouse.x=e.clientX;
-	mymouse.y=e.clientY;
-
-	mymouse.difx+=(mymouse.px-mymouse.x);
-	mymouse.dify+=(mymouse.py-mymouse.y);
-
-	mymouse.lookx+=mymouse.difx/100;
-	if(mymouse.lookx>=1)
-		mymouse.lookx=1;
-	if(mymouse.lookx<=-1)
-		mymouse.lookx=-1;
-	mymouse.looky+=mymouse.dify;
+	
+		mymouse.difx+=(mymouse.px-mymouse.x);
+		mymouse.dify+=(mymouse.py-mymouse.y);
+	}
 };
 
+document.onclick=function(e){
+	container.requestPointerLock();
+}
 
 function createDLight(x,y,z){
 	let light = new THREE.DirectionalLight();  
@@ -241,10 +231,6 @@ function createCube(){
 	let geome = new THREE.BoxGeometry(1, 1, 1);
 	let material = new THREE.MeshPhongMaterial( ); 
 
-	let loader = new THREE.TextureLoader();
-	let texture = loader.load('20004.jpg');
-	material.map = texture;
-
 	let cube = new THREE.Mesh( geome, material );
 	scene.add( cube );
 	return cube;
@@ -254,27 +240,12 @@ function createSky(){
 	let geome=new THREE.SphereGeometry(512,32);
 	let material=new THREE.MeshPhongMaterial();
 	material.side=THREE.DoubleSide;
-	// material.color=new THREE.Color(0x00FFFF);
 	let texture=tLoader.load('3sky001.jpg');
 	material.map=texture;
 	let sky=new THREE.Mesh(geome, material);
 	scene.add(sky);
+	sky.rotation.z+=Math.PI/2;
 }
-
-function createPlane(){
-	let geome=new THREE.PlaneGeometry(2,2);
-	let material=new THREE.MeshPhongMaterial();
-	let loader = new THREE.TextureLoader();
-	let texture = loader.load('suzu2.jpg');
-	material.map=texture;
-	geome.theteStart=Math.PI;
-	material.side=THREE.DoubleSide;
-	let plane=new THREE.Mesh( geome, material );
-	plane.position.set(5,1,0);
-	// plane.rotation.x=-Math.PI/2;
-	scene.add( plane );
-}
-
 
 function createFloor(){
 	let geome = new THREE.PlaneGeometry(190, 100);
@@ -287,20 +258,20 @@ function createFloor(){
 	plane.scale.set(0.5,0.5,0.5);
 	return plane;
 }
+
 function createCamera(x,y,z){
 	camera = new THREE.PerspectiveCamera(45, 
 		window.innerWidth / window.innerHeight, 1, 10000);
 	camera.position.set(x,y,z);
 }
-function createBall(){
-	let geome = new THREE.SphereGeometry(0.5, 30, 30);
+function createBall(r){
+	let geome = new THREE.SphereGeometry(r, 30, 30);
 	let material = new THREE.MeshPhongMaterial( ); 
 	let ball = new THREE.Mesh( geome, material );
 	scene.add( ball ); 
 	return ball;
 }
 function createRender(){
-	let container = document.getElementById('container');
 	renderer = new THREE.WebGLRenderer();             
 	renderer.setSize(window.innerWidth, window.innerHeight); 
 	container.appendChild(renderer.domElement);  
