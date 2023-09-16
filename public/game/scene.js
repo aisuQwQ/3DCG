@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-let tLoader = new THREE.TextureLoader();
-let gLoader = new GLTFLoader();
+const tLoader = new THREE.TextureLoader();
+const gLoader = new GLTFLoader();
 
-let container = document.getElementById('container');
+const container = document.getElementById('container');
+const arrow=document.getElementById("arrow");
+
 
 let renderer;
 let scene;
@@ -32,6 +34,19 @@ let mymouse=new class{
 
 
 main();
+
+//PC or Mobile
+let touchStart='mousedown';
+let touchEnd='mouseup';
+if(navigator.userAgent.match(/(iPhone|iPod|Android.*Mobile)/i)){
+	touchStart='touchstart';
+	touchEnd='touchend';
+	arrow.style.visibility='visible';
+	console.log(navigator.userAgent);
+}else{
+	console.log(navigator.userAgent);
+}
+
 
 async function main(){
 	createRender();
@@ -138,6 +153,7 @@ function run() {
 	renderer.render(scene, camera);
 	requestAnimationFrame(run);
 }
+
 document.onkeydown=function(e){
 	if(e.key.length==1)//a-z
 	{
@@ -148,7 +164,6 @@ document.onkeydown=function(e){
 	if(e.key=='Shift')
 		speed=0.2;
 };
-
 document.onkeyup=function(e){
 	if(e.key.length==1)//a-z
 	{
@@ -160,7 +175,41 @@ document.onkeyup=function(e){
 		speed=0.1;
 }
 
-document.onmousemove=function(e){
+arrow.addEventListener(touchStart, (e)=>{
+	const target=e.target.parentNode.id;
+	if(target=='left') key[0]=true;
+	if(target=='right') key[3]=true;
+	if(target=='up') key[22]=true;
+	if(target=='down') key[18]=true;
+});
+arrow.addEventListener(touchEnd, (e)=>{
+	const target=e.target.parentNode.id;
+	if(target=='left') key[0]=false;
+	if(target=='right') key[3]=false;
+	if(target=='up') key[22]=false;
+	if(target=='down') key[18]=false;
+});
+
+container.addEventListener('touchmove', (e)=>{
+	if(mymouse.x==-1)
+	{
+		mymouse.x=e.touches[0].pageX;
+		mymouse.y=e.touches[0].pageY;
+	}		
+
+	mymouse.px=mymouse.x;
+	mymouse.py=mymouse.y;
+	mymouse.x=e.touches[0].pageX;
+	mymouse.y=e.touches[0].pageY;
+
+	mymouse.difx+=(mymouse.px-mymouse.x);
+	mymouse.dify+=(mymouse.py-mymouse.y);
+});
+container.addEventListener('touchend', ()=>{
+	mymouse.x=-1;
+});
+
+container.onmousemove=function(e){
 	if(document.pointerLockElement==container)//pointer lock on
 	{
 		mymouse.difx-=e.movementX;
@@ -184,7 +233,7 @@ document.onmousemove=function(e){
 	}
 };
 
-document.onclick=function(e){
+container.onclick=function(){
 	container.requestPointerLock();
 }
 
