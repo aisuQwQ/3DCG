@@ -1,6 +1,17 @@
+html{
+	overflow: hidden;
+}
 body {
 	margin: 0;
 	background: #ff0000;
+	touch-action: pan-x pan-y;
+}
+
+* {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 #modal {
@@ -17,6 +28,9 @@ body {
 }
 
 #arrow {
+	touch-action: manipulation  !important;
+
+	/* background-color: #ff0000; */
 	/* visibility: hidden; */
 	height: 180px;
 	width: 180px;
@@ -25,6 +39,8 @@ body {
 	bottom: 0;
 	margin: 10px;
 
+	touch-action: pan-x pan-y;
+	
 	display: grid;
 	grid-template-columns: 1fr 1fr 1fr;
 	grid-template-rows: 1fr 1fr 1fr;

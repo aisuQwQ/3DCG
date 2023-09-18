@@ -153,7 +153,7 @@ function run() {
 	renderer.render(scene, camera);
 	requestAnimationFrame(run);
 }
-
+//WASD
 document.onkeydown=function(e){
 	if(e.key.length==1)//a-z
 	{
@@ -174,7 +174,7 @@ document.onkeyup=function(e){
 	if(e.key=='Shift')
 		speed=0.1;
 }
-
+//WASDmobile
 arrow.addEventListener(touchStart, (e)=>{
 	const target=e.target.parentNode.id;
 	if(target=='left') key[0]=true;
@@ -190,17 +190,26 @@ arrow.addEventListener(touchEnd, (e)=>{
 	if(target=='down') key[18]=false;
 });
 
+//視点移動mobile
 container.addEventListener('touchmove', (e)=>{
+	let index;
+	for(let i=0; i<e.touches.length; ++i) {
+		if(e.touches[i].target==renderer.domElement) {
+			index=i;
+			break;
+		}
+	}
+	
 	if(mymouse.x==-1)
 	{
-		mymouse.x=e.touches[0].pageX;
-		mymouse.y=e.touches[0].pageY;
+		mymouse.x=e.touches[index].pageX;
+		mymouse.y=e.touches[index].pageY;
 	}		
 
 	mymouse.px=mymouse.x;
 	mymouse.py=mymouse.y;
-	mymouse.x=e.touches[0].pageX;
-	mymouse.y=e.touches[0].pageY;
+	mymouse.x=e.touches[index].pageX;
+	mymouse.y=e.touches[index].pageY;
 
 	mymouse.difx+=(mymouse.px-mymouse.x);
 	mymouse.dify+=(mymouse.py-mymouse.y);
@@ -232,7 +241,7 @@ container.onmousemove=function(e){
 		mymouse.dify+=(mymouse.py-mymouse.y);
 	}
 };
-
+//ポインタロック
 container.onclick=function(){
 	container.requestPointerLock();
 }
