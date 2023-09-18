@@ -6,6 +6,7 @@ const gLoader = new GLTFLoader();
 
 const container = document.getElementById('container');
 const arrow=document.getElementById("arrow");
+const modal=document.getElementById('modal');
 
 
 let renderer;
@@ -32,6 +33,30 @@ let mymouse=new class{
 	dify=0;
 }
 
+const fps=new class{
+	rate=0;
+	count=0;
+	preTime;
+	nowTime;
+	tmpTime=0;
+
+	constructor() {
+		this.nowTime=new Date().getTime();
+	}
+	culc(){
+		this.count++;
+		this.preTime=this.nowTime;
+		this.nowTime=new Date().getTime();
+		this.tmpTime+=this.nowTime-this.preTime;
+
+		if(this.tmpTime>1000) {
+			this.tmpTime%=1000;
+			this.rate=this.count;
+			modal.innerText=this.rate;
+			this.count=0;
+		}
+	}
+}
 
 main();
 
@@ -81,6 +106,7 @@ async function main(){
 }
 
 function run() {
+	fps.culc();
 	if(flag)
 	{
 		//set between 0~2pi
