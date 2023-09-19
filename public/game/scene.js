@@ -68,6 +68,7 @@ if(navigator.userAgent.match(/(iPhone|iPod|Android.*Mobile)/i)){
 	touchStart='touchstart';
 	touchEnd='touchend';
 	arrow.style.visibility='visible';
+	dash.style.visibility='visible';
 	console.log(navigator.userAgent);
 }else{
 	console.log(navigator.userAgent);
@@ -397,5 +398,5 @@ function renderResize() {
 	camera.updateProjectionMatrix();
 	renderer.render(scene, camera);
 }
-window.addEventListener('resize', renderResize);
-window.addEventListener('orientationchange', renderResize);//iphone用
+self.addEventListener('resize', renderResize);
+self.addEventListener('orientationchange', renderResize);//iphone用
