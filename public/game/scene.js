@@ -6,6 +6,8 @@ const gLoader = new GLTFLoader();
 
 const container = document.getElementById('container');
 const arrow=document.getElementById("arrow");
+const modal=document.getElementById('modal');
+const dash=document.getElementById('dash');
 
 
 let renderer;
@@ -17,13 +19,14 @@ let me;
 let axisX;
 let axisY;
 
-let AngleDiff=0.05;
-let sensitivity=0.005;
+const AngleDiff=0.05;
+const sensitivity=0.005;
 let speed=0.1;
+let boost=1;
 
 let flag=0;
-let key=new Array(26).fill(false);
-let mymouse=new class{
+const key=new Array(26).fill(false);
+const mymouse=new class{
 	x=-1;
 	y=-1;
 	px=0;
@@ -32,8 +35,31 @@ let mymouse=new class{
 	dify=0;
 }
 
+const fps=new class{
+	rate=0;
+	count=0;
+	preTime;
+	nowTime;
+	tmpTime=0;
 
-main();
+	constructor() {
+		this.nowTime=new Date().getTime();
+	}
+	culc(){
+		this.count++;
+		this.preTime=this.nowTime;
+		this.nowTime=new Date().getTime();
+		this.tmpTime+=this.nowTime-this.preTime;
+
+		if(this.tmpTime>1000) {
+			this.tmpTime%=1000;
+			this.rate=this.count;
+			modal.innerText=this.rate;
+			this.count=0;
+		}
+	}
+}
+
 
 //PC or Mobile
 let touchStart='mousedown';
@@ -42,13 +68,16 @@ if(navigator.userAgent.match(/(iPhone|iPod|Android.*Mobile)/i)){
 	touchStart='touchstart';
 	touchEnd='touchend';
 	arrow.style.visibility='visible';
+	dash.style.visibility='visible';
 	console.log(navigator.userAgent);
 }else{
 	console.log(navigator.userAgent);
 }
+//mobile 縦
+let portrait=true;
 
-
-async function main(){
+main();
+function main(){
 	createRender();
 	scene = new THREE.Scene(); 
 	createCamera(0,0,10);
@@ -77,17 +106,19 @@ async function main(){
 	 
 	renderer.shadowMap.enabled = true;
 
+	renderResize();
 	run();
 }
 
 function run() {
+	fps.culc();
 	if(flag)
 	{
 		//set between 0~2pi
 		me.rotation.y=(me.rotation.y+2*Math.PI)%(2*Math.PI);
 		axisY.rotation.y=(axisY.rotation.y+2*Math.PI)%(2*Math.PI);
 		//本体移動
-		let d=key['w'.charCodeAt(0)-97]*1+key['s'.charCodeAt(0)-97]*2+key['d'.charCodeAt(0)-97]*4+key['a'.charCodeAt(0)-97]*8;
+		const d=key['w'.charCodeAt(0)-97]*1+key['s'.charCodeAt(0)-97]*2+key['d'.charCodeAt(0)-97]*4+key['a'.charCodeAt(0)-97]*8;
 		if(d>0)
 		{
 			let direction=0;
@@ -136,8 +167,8 @@ function run() {
 						me.rotation.y+=AngleDiff;
 				}
 			}
-			core.position.z-=speed*Math.cos(me.rotation.y)
-			core.position.x-=speed*Math.sin(me.rotation.y)
+			core.position.z-=speed*boost*Math.cos(me.rotation.y)
+			core.position.x-=speed*boost*Math.sin(me.rotation.y)
 		}
 
 		//視点移動
@@ -153,7 +184,7 @@ function run() {
 	renderer.render(scene, camera);
 	requestAnimationFrame(run);
 }
-
+//WASD
 document.onkeydown=function(e){
 	if(e.key.length==1)//a-z
 	{
@@ -174,7 +205,7 @@ document.onkeyup=function(e){
 	if(e.key=='Shift')
 		speed=0.1;
 }
-
+//WASDmobile
 arrow.addEventListener(touchStart, (e)=>{
 	const target=e.target.parentNode.id;
 	if(target=='left') key[0]=true;
@@ -189,21 +220,44 @@ arrow.addEventListener(touchEnd, (e)=>{
 	if(target=='up') key[22]=false;
 	if(target=='down') key[18]=false;
 });
+dash.addEventListener(touchStart, ()=>{
+	if(boost==1) {
+		boost=2;
+		dash.childNodes[1].classList.add('push');
+	} else {	
+		boost=1;
+		dash.childNodes[1].classList.remove('push');
+	}
+});
 
+//視点移動mobile
 container.addEventListener('touchmove', (e)=>{
+	let index;
+	for(let i=0; i<e.touches.length; ++i) {
+		if(e.touches[i].target==renderer.domElement) {
+			index=i;
+			break;
+		}
+	}
+	
 	if(mymouse.x==-1)
 	{
-		mymouse.x=e.touches[0].pageX;
-		mymouse.y=e.touches[0].pageY;
+		mymouse.x=e.touches[index].pageX;
+		mymouse.y=e.touches[index].pageY;
 	}		
 
 	mymouse.px=mymouse.x;
 	mymouse.py=mymouse.y;
-	mymouse.x=e.touches[0].pageX;
-	mymouse.y=e.touches[0].pageY;
+	mymouse.x=e.touches[index].pageX;
+	mymouse.y=e.touches[index].pageY;
 
-	mymouse.difx+=(mymouse.px-mymouse.x);
-	mymouse.dify+=(mymouse.py-mymouse.y);
+	if(portrait) {
+		mymouse.difx+=(mymouse.py-mymouse.y);
+		mymouse.dify-=(mymouse.px-mymouse.x);		
+	} else {
+		mymouse.difx+=(mymouse.px-mymouse.x);
+		mymouse.dify+=(mymouse.py-mymouse.y);
+	}
 });
 container.addEventListener('touchend', ()=>{
 	mymouse.x=-1;
@@ -232,7 +286,7 @@ container.onmousemove=function(e){
 		mymouse.dify+=(mymouse.py-mymouse.y);
 	}
 };
-
+//ポインタロック
 container.onclick=function(){
 	container.requestPointerLock();
 }
@@ -265,7 +319,7 @@ function createSLight(x,y,z){
 	return light
 }
 function createPLight(x,y,z){
-	let color = new THREE.Color("rgb(100,100,255)");
+	const color = new THREE.Color("rgb(100,100,255)");
 	light = new THREE.PointLight();  
 	
 	light.color.set(color);
@@ -323,5 +377,26 @@ function createBall(r){
 function createRender(){
 	renderer = new THREE.WebGLRenderer();             
 	renderer.setSize(window.innerWidth, window.innerHeight); 
-	container.appendChild(renderer.domElement);  
+	container.appendChild(renderer.domElement);
 }
+
+
+function renderResize() {
+	let wide, short;
+	if(window.innerHeight>=window.innerWidth) {
+		portrait=true;
+		wide=window.innerHeight;
+		short=window.innerWidth;
+	} else {
+		portrait=false;
+		wide=window.innerWidth;
+		short=window.innerHeight;
+	}
+	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize(wide, short);
+	camera.aspect=wide/short;
+	camera.updateProjectionMatrix();
+	renderer.render(scene, camera);
+}
+self.addEventListener('resize', renderResize);
+self.addEventListener('orientationchange', renderResize);//iphone用
