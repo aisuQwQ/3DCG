@@ -60,7 +60,6 @@ const fps=new class{
 	}
 }
 
-main();
 
 //PC or Mobile
 let touchStart='mousedown';
@@ -73,8 +72,10 @@ if(navigator.userAgent.match(/(iPhone|iPod|Android.*Mobile)/i)){
 }else{
 	console.log(navigator.userAgent);
 }
+//mobile 縦
+let portrait=true;
 
-
+main();
 function main(){
 	createRender();
 	scene = new THREE.Scene(); 
@@ -104,6 +105,7 @@ function main(){
 	 
 	renderer.shadowMap.enabled = true;
 
+	renderResize();
 	run();
 }
 
@@ -248,8 +250,13 @@ container.addEventListener('touchmove', (e)=>{
 	mymouse.x=e.touches[index].pageX;
 	mymouse.y=e.touches[index].pageY;
 
-	mymouse.difx+=(mymouse.px-mymouse.x);
-	mymouse.dify+=(mymouse.py-mymouse.y);
+	if(portrait) {
+		mymouse.difx+=(mymouse.py-mymouse.y);
+		mymouse.dify-=(mymouse.px-mymouse.x);		
+	} else {
+		mymouse.difx+=(mymouse.px-mymouse.x);
+		mymouse.dify+=(mymouse.py-mymouse.y);
+	}
 });
 container.addEventListener('touchend', ()=>{
 	mymouse.x=-1;
@@ -369,5 +376,26 @@ function createBall(r){
 function createRender(){
 	renderer = new THREE.WebGLRenderer();             
 	renderer.setSize(window.innerWidth, window.innerHeight); 
-	container.appendChild(renderer.domElement);  
+	container.appendChild(renderer.domElement);
 }
+
+
+function renderResize() {
+	let wide, short;
+	if(window.innerHeight>=window.innerWidth) {
+		portrait=true;
+		wide=window.innerHeight;
+		short=window.innerWidth;
+	} else {
+		portrait=false;
+		wide=window.innerWidth;
+		short=window.innerHeight;
+	}
+	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize(wide, short);
+	camera.aspect=wide/short;
+	camera.updateProjectionMatrix();
+	renderer.render(scene, camera);
+}
+window.addEventListener('resize', renderResize);
+window.addEventListener('orientationchange', renderResize);//iphone用

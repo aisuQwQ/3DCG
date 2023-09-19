@@ -15,16 +15,9 @@ body {
 }
 
 #modal {
-	width: 10%;
-	height: 10%;
 	background-color: greenyellow;
 	z-index: 2;
 	position: absolute;
-	/* top: 0;
-	right: 0;
-	bottom: 0;
-	left: 0;
-	margin: auto; */
 }
 
 #arrow {
@@ -82,8 +75,28 @@ body {
 	right: 30px;
 	bottom: 30px;
 	margin: 10px;
+	z-index: 2;
 }
 
 canvas {
 	z-index: 1;
+}
+
+@media (orientation: portrait){
+	#container {
+		position: absolute;
+		bottom: 100%;
+		transform-origin: bottom left;
+		rotate: 90deg;
+	}
+	#dash {
+		right: 0;
+		bottom: 30px;
+		left: 30px;
+		rotate: 90deg;
+	}
+	#arrow {
+		top: 0;
+		rotate: 90deg;
+	}
 }
