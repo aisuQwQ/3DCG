@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as CANNON from 'cannon-es';
 
 const tLoader = new THREE.TextureLoader();
 const gLoader = new GLTFLoader();
@@ -9,10 +10,31 @@ const arrow=document.getElementById("arrow");
 const modal=document.getElementById('modal');
 const dash=document.getElementById('dash');
 
-
 let renderer;
 let scene;
 let camera;
+const objectList=[];
+
+const world=new CANNON.World({
+	gravity: new CANNON.Vec3(0, -9.82, 0),
+	defaultMaterial: new CANNON.Material({
+		friction: 2
+	})
+});
+
+const groundBody=new CANNON.Body({
+	type: CANNON.Body.STATIC,
+	shape: new CANNON.Plane(),
+	material: new CANNON.Material({
+		friction: 2
+	})
+});
+groundBody.quaternion.setFromEuler(-Math.PI/2,0,0);
+world.addBody(groundBody);
+
+
+
+
 
 let core;
 let me;
@@ -84,6 +106,23 @@ function main(){
 
 	createFloor();
 	createSky();
+	
+	objectList.push(createBox(0,2,0,2));
+	objectList.push(createBox(5,1,0,2));
+	objectList.push(createSphere(5,10,0,2));
+	console.log(objectList[0].body.mass=100);
+	console.log(objectList[1].body.type=CANNON.Body.STATIC);
+
+	
+	objectList.push(createBox(3,1,-5,2));
+	objectList.push(createBox(1,1,-5,2));
+	objectList.push(createBox(-1,1,-5,2));
+	objectList.push(createBox(-3,1,-5,2));
+
+	objectList.push(createBox(3,3,-5,2));
+	objectList.push(createBox(1,3,-5,2));
+	objectList.push(createBox(-1,3,-5,2));
+	objectList.push(createBox(-3,3,-5,2));
 
 	core=createBall(0);
 		axisY=createCube();
@@ -167,10 +206,9 @@ function run() {
 						me.rotation.y+=AngleDiff;
 				}
 			}
-			core.position.z-=speed*boost*Math.cos(me.rotation.y)
-			core.position.x-=speed*boost*Math.sin(me.rotation.y)
+			objectList[0].body.position.z-=speed*boost*Math.cos(me.rotation.y)
+			objectList[0].body.position.x-=speed*boost*Math.sin(me.rotation.y)
 		}
-
 		//視点移動
 		axisY.rotation.y+=mymouse.difx*sensitivity;
 		mymouse.difx=0;
@@ -181,6 +219,15 @@ function run() {
 		if(axisX.rotation.x>=-0.1)
 				axisX.rotation.x=-0.1;
 	}
+	world.fixedStep();
+
+	objectList.forEach((elm)=>{
+		elm.mesh.position.copy(elm.body.position);
+		elm.mesh.quaternion.copy(elm.body.quaternion);
+	});
+	core.position.copy(objectList[0].body.position);
+	// core.quaternion.copy(objectList[0].body.quaternion);
+	core.position.y-=objectList[0].body.shapes[0].halfExtents.y;
 	renderer.render(scene, camera);
 	requestAnimationFrame(run);
 }
@@ -400,3 +447,54 @@ function renderResize() {
 }
 self.addEventListener('resize', renderResize);
 self.addEventListener('orientationchange', renderResize);//iphone用
+
+function createSphere(x,y,z,radius) {
+	const geometry=new THREE.SphereGeometry(radius);
+	const material=new THREE.MeshNormalMaterial();
+	const sphereMesh=new THREE.Mesh(geometry, material);
+	sphereMesh.position.set(x,y,z);
+	scene.add(sphereMesh);
+
+	const sphereBody=new CANNON.Body({
+		mass: 5,
+		shape: new CANNON.Sphere(radius),
+		material: new CANNON.Material({
+			friction: 2
+		})
+	});
+	sphereBody.position.set(x,y,z);
+	world.addBody(sphereBody);
+
+	return {mesh:sphereMesh, body:sphereBody};
+}
+
+function createBox(x,y,z,w){
+	const geometry=new THREE.BoxGeometry(w,w,w);
+	const material=new THREE.MeshNormalMaterial();
+	const boxMesh=new THREE.Mesh(geometry, material);
+	boxMesh.position.set(x,y,z);
+	scene.add(boxMesh);
+
+	const halfExtents=new CANNON.Vec3(w/2,w/2,w/2);
+	const boxShape=new CANNON.Box(halfExtents);
+	const boxBody=new CANNON.Body({
+		mass: 5,
+		shape: boxShape,
+		material: new CANNON.Material({
+			friction: 1
+		})
+	});
+	boxBody.position.set(x,y,z);
+	world.addBody(boxBody);
+
+	return {mesh: boxMesh, body: boxBody};
+}
+
+function createPlane(x,y,z,w,h) {
+	const geometry=new THREE.PlaneGeometry(w,h);
+	const material=new THREE.MeshNormalMaterial();
+	const planeMesh=new THREE.Mesh(geometry, material);
+	planeMesh.position.set(x,y,z);
+	scene.add(planeMesh);
+
+}
